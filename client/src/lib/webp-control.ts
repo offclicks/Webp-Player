@@ -10,11 +10,17 @@ export interface WebPControlOptions {
 
 export class WebPController {
   private element: HTMLImageElement;
-  private isPlaying: boolean;
+  private originalSrc: string;
+  private isPlaying: boolean = false;
   private options: WebPControlOptions;
+  private frameCanvas: HTMLCanvasElement;
+  private frameContext: CanvasRenderingContext2D | null;
+  private currentFrameDataUrl: string | null = null;
+  private isDestroyed: boolean = false;
 
   constructor(element: HTMLImageElement, options: WebPControlOptions = {}) {
     this.element = element;
+    this.originalSrc = element.src;
     this.options = {
       autoplay: false,
       loop: true,
@@ -23,42 +29,106 @@ export class WebPController {
       ...options
     };
 
-    // Add base classes
-    this.element.classList.add('webp-image');
-    this.element.parentElement?.classList.add('webp-container');
+    // Initialize canvas for frame capture
+    this.frameCanvas = document.createElement('canvas');
+    this.frameContext = this.frameCanvas.getContext('2d');
 
     // Set initial state
-    this.isPlaying = false;
-    if (this.options.initialState === 'play') {
+    if (this.options.initialState === 'play' || this.options.autoplay) {
       this.play();
     } else {
-      this.pause();
+      this.initializePausedState();
     }
   }
 
-  play() {
-    if (this.isPlaying) return;
-
-    this.element.classList.remove('webp-paused');
-    this.element.classList.add('webp-playing');
-    this.isPlaying = true;
-    this.options.onPlay?.();
+  private async initializePausedState() {
+    try {
+      await this.waitForImageLoad();
+      if (this.options.freezeOnPause) {
+        await this.captureAndSetFrame();
+      }
+      this.isPlaying = false;
+      this.options.onPause?.();
+    } catch (error) {
+      console.error('Error initializing paused state:', error);
+    }
   }
 
-  pause() {
-    if (!this.isPlaying && this.element.classList.contains('webp-paused')) return;
-
-    this.element.classList.remove('webp-playing');
-    this.element.classList.add('webp-paused');
-    this.isPlaying = false;
-    this.options.onPause?.();
+  private waitForImageLoad(): Promise<void> {
+    return new Promise((resolve) => {
+      if (this.element.complete) {
+        resolve();
+      } else {
+        const handleLoad = () => {
+          this.element.removeEventListener('load', handleLoad);
+          resolve();
+        };
+        this.element.addEventListener('load', handleLoad);
+      }
+    });
   }
 
-  toggle() {
+  private async captureAndSetFrame(): Promise<void> {
+    if (!this.frameContext || this.isDestroyed) return;
+
+    try {
+      // Ensure we're capturing from the original image
+      const tempImage = new Image();
+      tempImage.src = this.originalSrc;
+      await new Promise((resolve) => {
+        tempImage.onload = resolve;
+      });
+
+      // Set canvas dimensions to match the image
+      this.frameCanvas.width = tempImage.naturalWidth;
+      this.frameCanvas.height = tempImage.naturalHeight;
+
+      // Draw the current frame
+      this.frameContext.clearRect(0, 0, this.frameCanvas.width, this.frameCanvas.height);
+      this.frameContext.drawImage(tempImage, 0, 0);
+
+      // Store and set the frame
+      this.currentFrameDataUrl = this.frameCanvas.toDataURL();
+      this.element.src = this.currentFrameDataUrl;
+    } catch (error) {
+      console.error('Error capturing frame:', error);
+      this.element.src = this.originalSrc;
+    }
+  }
+
+  async play() {
+    if (this.isPlaying || this.isDestroyed) return;
+
+    try {
+      this.isPlaying = true;
+      this.element.src = this.originalSrc;
+      await this.waitForImageLoad();
+      this.options.onPlay?.();
+    } catch (error) {
+      console.error('Error playing WebP animation:', error);
+      this.isPlaying = false;
+    }
+  }
+
+  async pause() {
+    if (!this.isPlaying || this.isDestroyed) return;
+
+    try {
+      if (this.options.freezeOnPause) {
+        await this.captureAndSetFrame();
+      }
+      this.isPlaying = false;
+      this.options.onPause?.();
+    } catch (error) {
+      console.error('Error pausing WebP animation:', error);
+    }
+  }
+
+  async toggle() {
     if (this.isPlaying) {
-      this.pause();
+      await this.pause();
     } else {
-      this.play();
+      await this.play();
     }
   }
 
@@ -67,7 +137,9 @@ export class WebPController {
   }
 
   destroy() {
-    this.element.classList.remove('webp-playing', 'webp-paused', 'webp-image');
-    this.element.parentElement?.classList.remove('webp-container');
+    this.isDestroyed = true;
+    this.pause();
+    this.element.src = this.originalSrc;
+    this.frameContext = null;
   }
 }

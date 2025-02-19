@@ -11,29 +11,3 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
-
-/* WebP Animation Controls */
-.webp-container {
-  position: relative;
-  display: inline-block;
-}
-
-.webp-image {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.webp-playing {
-  animation: webp-animation 0.8s steps(10) infinite;
-}
-
-.webp-paused {
-  animation: none;
-  opacity: 1;
-}
-
-@keyframes webp-animation {
-  0% { opacity: 1; }
-  100% { opacity: 1; }
-}

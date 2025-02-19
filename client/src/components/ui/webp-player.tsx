@@ -27,25 +27,19 @@ export function WebPPlayer({
   const [isPlaying, setIsPlaying] = useState(options.initialState === 'play');
 
   useEffect(() => {
-    if (!imgRef.current) return;
-
-    // Clean up previous controller
-    if (controllerRef.current) {
-      controllerRef.current.destroy();
+    if (imgRef.current) {
+      controllerRef.current = new WebPController(imgRef.current, {
+        ...options,
+        onPlay: () => {
+          setIsPlaying(true);
+          options.onPlay?.();
+        },
+        onPause: () => {
+          setIsPlaying(false);
+          options.onPause?.();
+        }
+      });
     }
-
-    // Create new controller
-    controllerRef.current = new WebPController(imgRef.current, {
-      ...options,
-      onPlay: () => {
-        setIsPlaying(true);
-        options.onPlay?.();
-      },
-      onPause: () => {
-        setIsPlaying(false);
-        options.onPause?.();
-      }
-    });
 
     return () => {
       controllerRef.current?.destroy();
@@ -70,20 +64,15 @@ export function WebPPlayer({
 
   return (
     <Card className="p-4 space-y-4">
-      <div 
-        className="relative overflow-hidden"
+      <img
+        ref={imgRef}
+        src={src}
+        width={width}
+        height={height}
+        className={`max-w-full h-auto ${className}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-      >
-        <img
-          ref={imgRef}
-          src={src}
-          width={width}
-          height={height}
-          className={`webp-image ${className} ${isPlaying ? 'webp-playing' : 'webp-paused'}`}
-        />
-      </div>
-
+      />
       {showControls && (
         <div className="flex justify-center">
           <Button
