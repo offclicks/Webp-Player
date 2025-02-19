@@ -6,7 +6,6 @@ A TypeScript-first WebP animation control library with advanced React integratio
 
 - 🎮 Play/Pause controls for WebP animations
 - 🖱️ Hover-to-play functionality
-- ⏸️ Frame freezing on pause
 - 🔄 Loop control
 - 🎯 TypeScript support
 - ⚛️ React hooks and components
