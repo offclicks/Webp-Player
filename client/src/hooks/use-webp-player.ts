@@ -5,20 +5,25 @@ export function useWebPPlayer(options?: WebPControlOptions) {
   const controllerRef = useRef<WebPController | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const initialize = (element: HTMLImageElement) => {
-    if (element) {
-      controllerRef.current = new WebPController(element, {
-        ...options,
-        onPlay: () => {
-          setIsPlaying(true);
-          options?.onPlay?.();
-        },
-        onPause: () => {
-          setIsPlaying(false);
-          options?.onPause?.();
-        }
-      });
+  const initialize = (element: HTMLImageElement | null) => {
+    if (!element) return;
+
+    // Clean up previous controller if it exists
+    if (controllerRef.current) {
+      controllerRef.current.destroy();
     }
+
+    controllerRef.current = new WebPController(element, {
+      ...options,
+      onPlay: () => {
+        setIsPlaying(true);
+        options?.onPlay?.();
+      },
+      onPause: () => {
+        setIsPlaying(false);
+        options?.onPause?.();
+      }
+    });
   };
 
   useEffect(() => {
@@ -30,9 +35,25 @@ export function useWebPPlayer(options?: WebPControlOptions) {
   return {
     initialize,
     isPlaying,
-    play: () => controllerRef.current?.play(),
-    pause: () => controllerRef.current?.pause(),
-    toggle: () => controllerRef.current?.toggle(),
-    restart: () => controllerRef.current?.restart()
+    play: () => {
+      if (controllerRef.current && !isPlaying) {
+        controllerRef.current.play();
+      }
+    },
+    pause: () => {
+      if (controllerRef.current && isPlaying) {
+        controllerRef.current.pause();
+      }
+    },
+    toggle: () => {
+      if (controllerRef.current) {
+        controllerRef.current.toggle();
+      }
+    },
+    restart: () => {
+      if (controllerRef.current) {
+        controllerRef.current.restart();
+      }
+    }
   };
 }

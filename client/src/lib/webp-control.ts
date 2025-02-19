@@ -12,6 +12,7 @@ export class WebPController {
   private isPlaying: boolean = false;
   private options: WebPControlOptions;
   private loadPromise: Promise<void>;
+  private isTransitioning: boolean = false;
 
   constructor(element: HTMLImageElement, options: WebPControlOptions = {}) {
     this.element = element;
@@ -22,7 +23,6 @@ export class WebPController {
       ...options
     };
 
-    // Initialize load promise
     this.loadPromise = this.waitForLoad();
 
     if (this.options.autoplay) {
@@ -41,40 +41,61 @@ export class WebPController {
   }
 
   async play() {
-    if (!this.isPlaying) {
-      this.isPlaying = true;
+    if (this.isPlaying || this.isTransitioning) return;
+
+    try {
+      this.isTransitioning = true;
       await this.loadPromise;
+      this.isPlaying = true;
       this.element.src = this.originalSrc;
       this.options.onPlay?.();
+    } catch (error) {
+      console.error('Error playing WebP animation:', error);
+    } finally {
+      this.isTransitioning = false;
     }
   }
 
   async pause() {
-    if (this.isPlaying) {
-      this.isPlaying = false;
+    if (!this.isPlaying || this.isTransitioning) return;
+
+    try {
+      this.isTransitioning = true;
       await this.loadPromise;
 
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = this.element.naturalWidth;
-        canvas.height = this.element.naturalHeight;
-        const ctx = canvas.getContext('2d');
+      const canvas = document.createElement('canvas');
+      canvas.width = this.element.naturalWidth || this.element.width;
+      canvas.height = this.element.naturalHeight || this.element.height;
 
-        if (ctx) {
-          ctx.drawImage(this.element, 0, 0);
-          this.element.src = canvas.toDataURL();
-        }
-      } catch (error) {
-        console.error('Error pausing WebP animation:', error);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      // Ensure image is loaded before drawing
+      if (this.element.complete) {
+        ctx.drawImage(this.element, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        this.element.src = dataUrl;
+        this.isPlaying = false;
+        this.options.onPause?.();
       }
-
-      this.options.onPause?.();
+    } catch (error) {
+      console.error('Error pausing WebP animation:', error);
+      // Fallback: just stop the animation by setting the original source
+      this.element.src = this.originalSrc;
+    } finally {
+      this.isTransitioning = false;
     }
   }
 
   async restart() {
-    await this.loadPromise;
-    this.element.src = this.originalSrc;
+    try {
+      await this.loadPromise;
+      if (this.isPlaying) {
+        this.element.src = this.originalSrc;
+      }
+    } catch (error) {
+      console.error('Error restarting WebP animation:', error);
+    }
   }
 
   toggle() {
@@ -90,7 +111,11 @@ export class WebPController {
   }
 
   destroy() {
-    this.pause();
-    this.element.src = this.originalSrc;
+    try {
+      this.pause();
+      this.element.src = this.originalSrc;
+    } catch (error) {
+      console.error('Error destroying WebP controller:', error);
+    }
   }
 }
