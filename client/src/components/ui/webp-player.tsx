@@ -4,6 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Play, Pause } from "lucide-react";
 
+/**
+ * Props for the WebPPlayer component
+ * @property {string} src - The source URL of the WebP animation
+ * @property {number} [width] - Optional width of the player
+ * @property {number} [height] - Optional height of the player
+ * @property {string} [className] - Optional CSS classes
+ * @property {boolean} [playOnHover=false] - Whether to play on hover
+ * @property {boolean} [showControls=true] - Whether to show play/pause controls
+ * @property {boolean} [loop=true] - Whether to loop the animation
+ * @property {boolean} [freezeOnPause=true] - Whether to freeze on the current frame when paused
+ * @property {'play' | 'pause'} [initialState='pause'] - Initial playback state
+ */
 interface WebPPlayerProps extends WebPControlOptions {
   src: string;
   width?: number;
