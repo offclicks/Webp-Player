@@ -36,7 +36,7 @@ export function WebPPlayer({
 }: WebPPlayerProps) {
   const imgRef = useRef<HTMLImageElement>(null);
   const controllerRef = useRef<WebPController | null>(null);
-  const [isPlaying, setIsPlaying] = useState(options.initialState === 'play');
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     if (imgRef.current) {
