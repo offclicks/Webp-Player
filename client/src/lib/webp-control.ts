@@ -11,6 +11,7 @@ export class WebPController {
   private originalSrc: string;
   private isPlaying: boolean = false;
   private options: WebPControlOptions;
+  private loadPromise: Promise<void>;
 
   constructor(element: HTMLImageElement, options: WebPControlOptions = {}) {
     this.element = element;
@@ -21,46 +22,58 @@ export class WebPController {
       ...options
     };
 
+    // Initialize load promise
+    this.loadPromise = this.waitForLoad();
+
     if (this.options.autoplay) {
       this.play();
     }
+  }
 
-    // Handle looping by restarting when animation ends
-    this.element.addEventListener('load', () => {
-      if (this.options.loop && this.isPlaying) {
-        this.restart();
+  private waitForLoad(): Promise<void> {
+    return new Promise((resolve) => {
+      if (this.element.complete) {
+        resolve();
       } else {
-        this.options.onEnd?.();
+        this.element.onload = () => resolve();
       }
     });
   }
 
-  play() {
+  async play() {
     if (!this.isPlaying) {
       this.isPlaying = true;
-      // Force WebP animation to restart by reloading the source
+      await this.loadPromise;
       this.element.src = this.originalSrc;
       this.options.onPlay?.();
     }
   }
 
-  pause() {
+  async pause() {
     if (this.isPlaying) {
       this.isPlaying = false;
-      // Create a static copy of the current frame
-      const canvas = document.createElement('canvas');
-      canvas.width = this.element.width;
-      canvas.height = this.element.height;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(this.element, 0, 0);
-        this.element.src = canvas.toDataURL();
+      await this.loadPromise;
+
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = this.element.naturalWidth;
+        canvas.height = this.element.naturalHeight;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+          ctx.drawImage(this.element, 0, 0);
+          this.element.src = canvas.toDataURL();
+        }
+      } catch (error) {
+        console.error('Error pausing WebP animation:', error);
       }
+
       this.options.onPause?.();
     }
   }
 
-  restart() {
+  async restart() {
+    await this.loadPromise;
     this.element.src = this.originalSrc;
   }
 
