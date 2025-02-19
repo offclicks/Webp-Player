@@ -1,4 +1,4 @@
-# WebP Animation Controller for React
+# WebP Player & Animation Controller for React
 
 A TypeScript-first WebP animation control library with advanced React integration, focusing on precise animation management and user interaction.
 
