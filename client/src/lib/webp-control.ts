@@ -23,34 +23,34 @@ export class WebPController {
       ...options
     };
 
-    // Set initial state
-    this.isPlaying = this.options.initialState === 'play';
-    this.updatePlayState();
-  }
+    // Add base classes
+    this.element.classList.add('webp-image');
+    this.element.parentElement?.classList.add('webp-container');
 
-  private updatePlayState() {
-    if (this.isPlaying) {
-      this.element.classList.remove('webp-paused');
-      this.element.classList.add('webp-playing');
+    // Set initial state
+    this.isPlaying = false;
+    if (this.options.initialState === 'play') {
+      this.play();
     } else {
-      this.element.classList.remove('webp-playing');
-      this.element.classList.add('webp-paused');
+      this.pause();
     }
   }
 
   play() {
     if (this.isPlaying) return;
 
+    this.element.classList.remove('webp-paused');
+    this.element.classList.add('webp-playing');
     this.isPlaying = true;
-    this.updatePlayState();
     this.options.onPlay?.();
   }
 
   pause() {
-    if (!this.isPlaying) return;
+    if (!this.isPlaying && this.element.classList.contains('webp-paused')) return;
 
+    this.element.classList.remove('webp-playing');
+    this.element.classList.add('webp-paused');
     this.isPlaying = false;
-    this.updatePlayState();
     this.options.onPause?.();
   }
 
@@ -67,6 +67,7 @@ export class WebPController {
   }
 
   destroy() {
-    this.element.classList.remove('webp-playing', 'webp-paused');
+    this.element.classList.remove('webp-playing', 'webp-paused', 'webp-image');
+    this.element.parentElement?.classList.remove('webp-container');
   }
 }

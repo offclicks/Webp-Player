@@ -13,19 +13,27 @@
 }
 
 /* WebP Animation Controls */
+.webp-container {
+  position: relative;
+  display: inline-block;
+}
+
+.webp-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .webp-playing {
-  animation: webp-play 0.1s steps(1) infinite !important;
+  animation: webp-animation 0.8s steps(10) infinite;
 }
 
 .webp-paused {
-  animation: none !important;
+  animation: none;
+  opacity: 1;
 }
 
-@keyframes webp-play {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 1;
-  }
+@keyframes webp-animation {
+  0% { opacity: 1; }
+  100% { opacity: 1; }
 }
