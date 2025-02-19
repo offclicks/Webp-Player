@@ -21,7 +21,7 @@ export default function Home() {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Basic Controls</h2>
           <WebPPlayer
-            src="attached_assets/sample-webp.webp"
+            src="/sample-webp.webp"
             width={300}
             height={200}
             showControls={true}
@@ -33,7 +33,7 @@ export default function Home() {
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Hover to Play</h2>
           <WebPPlayer
-            src="attached_assets/sample-webp.webp"
+            src="/sample-webp.webp"
             width={300}
             height={200}
             playOnHover={true}
@@ -47,7 +47,7 @@ export default function Home() {
           <Card className="p-4 space-y-4">
             <img
               ref={initialize}
-              src="attached_assets/sample-webp.webp"
+              src="/sample-webp.webp"
               width={300}
               height={200}
               className="max-w-full h-auto"
