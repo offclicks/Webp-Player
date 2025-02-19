@@ -26,10 +26,7 @@ export class WebPController {
     };
 
     this.loadPromise = this.waitForLoad();
-
-    if (this.options.initialState === 'play' || this.options.autoplay) {
-      this.play();
-    }
+    this.isPlaying = false;
   }
 
   private waitForLoad(): Promise<void> {

@@ -39,11 +39,22 @@ export function WebPPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    if (imgRef.current) {
-      // Wait for the image to load before initializing the controller
-      const img = imgRef.current;
-      const initController = () => {
-        controllerRef.current = new WebPController(img, {
+    const init = async () => {
+      if (imgRef.current) {
+        // Ensure image is loaded
+        if (!imgRef.current.complete) {
+          await new Promise(resolve => {
+            imgRef.current!.onload = resolve;
+          });
+        }
+        
+        // Destroy previous controller if it exists
+        if (controllerRef.current) {
+          controllerRef.current.destroy();
+        }
+
+        // Create new controller
+        controllerRef.current = new WebPController(imgRef.current, {
           ...options,
           onPlay: () => {
             setIsPlaying(true);
@@ -54,14 +65,15 @@ export function WebPPlayer({
             options.onPause?.();
           }
         });
-      };
 
-      if (img.complete) {
-        initController();
-      } else {
-        img.onload = initController;
+        // Set initial state
+        if (options.initialState === 'pause') {
+          controllerRef.current.pause();
+        }
       }
-    }
+    };
+
+    init();
 
     return () => {
       controllerRef.current?.destroy();
