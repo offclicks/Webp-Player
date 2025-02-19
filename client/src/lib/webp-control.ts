@@ -1,6 +1,8 @@
 export interface WebPControlOptions {
   autoplay?: boolean;
   loop?: boolean;
+  freezeOnPause?: boolean;
+  initialState?: 'play' | 'pause';
   onPlay?: () => void;
   onPause?: () => void;
   onEnd?: () => void;
@@ -13,6 +15,7 @@ export class WebPController {
   private options: WebPControlOptions;
   private loadPromise: Promise<void>;
   private isTransitioning: boolean = false;
+  private currentFrameDataUrl: string | null = null;
 
   constructor(element: HTMLImageElement, options: WebPControlOptions = {}) {
     this.element = element;
@@ -20,13 +23,17 @@ export class WebPController {
     this.options = {
       autoplay: false,
       loop: true,
+      freezeOnPause: true,
+      initialState: 'pause',
       ...options
     };
 
     this.loadPromise = this.waitForLoad();
 
-    if (this.options.autoplay) {
+    if (this.options.initialState === 'play' || this.options.autoplay) {
       this.play();
+    } else {
+      this.captureFrame();
     }
   }
 
@@ -38,6 +45,23 @@ export class WebPController {
         this.element.onload = () => resolve();
       }
     });
+  }
+
+  private async captureFrame(): Promise<string | null> {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = this.element.naturalWidth || this.element.width;
+      canvas.height = this.element.naturalHeight || this.element.height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      ctx.drawImage(this.element, 0, 0);
+      return canvas.toDataURL('image/png');
+    } catch (error) {
+      console.error('Error capturing frame:', error);
+      return null;
+    }
   }
 
   async play() {
@@ -63,24 +87,20 @@ export class WebPController {
       this.isTransitioning = true;
       await this.loadPromise;
 
-      const canvas = document.createElement('canvas');
-      canvas.width = this.element.naturalWidth || this.element.width;
-      canvas.height = this.element.naturalHeight || this.element.height;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Could not get canvas context');
-
-      // Ensure image is loaded before drawing
-      if (this.element.complete) {
-        ctx.drawImage(this.element, 0, 0);
-        const dataUrl = canvas.toDataURL('image/png');
-        this.element.src = dataUrl;
-        this.isPlaying = false;
-        this.options.onPause?.();
+      if (this.options.freezeOnPause) {
+        const frameDataUrl = await this.captureFrame();
+        if (frameDataUrl) {
+          this.currentFrameDataUrl = frameDataUrl;
+          this.element.src = frameDataUrl;
+        }
+      } else {
+        this.element.src = this.originalSrc;
       }
+
+      this.isPlaying = false;
+      this.options.onPause?.();
     } catch (error) {
       console.error('Error pausing WebP animation:', error);
-      // Fallback: just stop the animation by setting the original source
       this.element.src = this.originalSrc;
     } finally {
       this.isTransitioning = false;

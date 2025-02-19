@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 export default function Home() {
   const { initialize, isPlaying, play, pause, toggle } = useWebPPlayer({
     loop: true,
+    freezeOnPause: true,
+    initialState: 'pause',
     onPlay: () => console.log("Playing"),
     onPause: () => console.log("Paused")
   });
@@ -17,27 +19,30 @@ export default function Home() {
       </h1>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Basic Player with Controls */}
+        {/* Basic Player - Starts Playing */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-semibold">Basic Controls</h2>
+          <h2 className="text-2xl font-semibold">Auto-playing Controls</h2>
           <WebPPlayer
             src="/sample-webp.webp"
             width={300}
             height={200}
             showControls={true}
             loop={true}
+            initialState="play"
+            freezeOnPause={true}
           />
         </div>
 
-        {/* Hover to Play Demo */}
+        {/* Hover to Play with Frame Freeze */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-semibold">Hover to Play</h2>
+          <h2 className="text-2xl font-semibold">Hover to Play (with frame freeze)</h2>
           <WebPPlayer
             src="/sample-webp.webp"
             width={300}
             height={200}
             playOnHover={true}
             showControls={false}
+            freezeOnPause={true}
           />
         </div>
 
