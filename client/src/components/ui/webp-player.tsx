@@ -22,13 +22,13 @@ export function WebPPlayer({
   showControls = true,
   ...options
 }: WebPPlayerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const controllerRef = useRef<WebPController | null>(null);
   const [isPlaying, setIsPlaying] = useState(options.initialState === 'play');
 
   useEffect(() => {
     if (imgRef.current) {
+      // Initialize controller
       controllerRef.current = new WebPController(imgRef.current, {
         ...options,
         onPlay: () => {
@@ -66,8 +66,7 @@ export function WebPPlayer({
   return (
     <Card className="p-4 space-y-4">
       <div 
-        ref={containerRef}
-        className="relative"
+        className="relative overflow-hidden"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -76,10 +75,10 @@ export function WebPPlayer({
           src={src}
           width={width}
           height={height}
-          className={`max-w-full h-auto ${className}`}
-          style={{ animation: isPlaying ? undefined : 'none' }}
+          className={`max-w-full h-auto ${className} ${options.initialState === 'pause' ? 'webp-paused' : 'webp-playing'}`}
         />
       </div>
+
       {showControls && (
         <div className="flex justify-center">
           <Button

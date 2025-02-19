@@ -10,14 +10,11 @@ export interface WebPControlOptions {
 
 export class WebPController {
   private element: HTMLImageElement;
-  private originalSrc: string;
   private isPlaying: boolean;
   private options: WebPControlOptions;
-  private staticImage: HTMLImageElement | null = null;
 
   constructor(element: HTMLImageElement, options: WebPControlOptions = {}) {
     this.element = element;
-    this.originalSrc = element.src;
     this.options = {
       autoplay: false,
       loop: true,
@@ -26,86 +23,42 @@ export class WebPController {
       ...options
     };
 
-    // Set up initial styles
-    this.element.style.animation = 'none';
-    this.isPlaying = false;
+    // Set initial state
+    this.isPlaying = this.options.initialState === 'play';
+    this.updatePlayState();
+  }
 
-    // Initialize based on options
-    if (this.options.initialState === 'play' || this.options.autoplay) {
-      this.play();
+  private updatePlayState() {
+    if (this.isPlaying) {
+      this.element.classList.remove('webp-paused');
+      this.element.classList.add('webp-playing');
     } else {
-      this.pause();
+      this.element.classList.remove('webp-playing');
+      this.element.classList.add('webp-paused');
     }
   }
 
-  private createStaticImage(): HTMLImageElement {
-    const img = new Image();
-    img.src = this.originalSrc;
-    img.style.position = 'absolute';
-    img.style.top = '0';
-    img.style.left = '0';
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.opacity = '0';
-    return img;
-  }
-
-  async play() {
+  play() {
     if (this.isPlaying) return;
 
-    try {
-      // Remove static image if it exists
-      if (this.staticImage && this.staticImage.parentNode) {
-        this.staticImage.parentNode.removeChild(this.staticImage);
-        this.staticImage = null;
-      }
-
-      // Start animation
-      this.element.style.animation = '';
-      this.element.style.opacity = '1';
-      this.isPlaying = true;
-      this.options.onPlay?.();
-    } catch (error) {
-      console.error('Error playing WebP animation:', error);
-    }
+    this.isPlaying = true;
+    this.updatePlayState();
+    this.options.onPlay?.();
   }
 
-  async pause() {
-    if (!this.isPlaying && !this.options.freezeOnPause) return;
+  pause() {
+    if (!this.isPlaying) return;
 
-    try {
-      if (this.options.freezeOnPause) {
-        // Create static image for freeze frame if it doesn't exist
-        if (!this.staticImage) {
-          this.staticImage = this.createStaticImage();
-          const container = this.element.parentNode as HTMLElement;
-          if (container) {
-            container.style.position = 'relative';
-            container.insertBefore(this.staticImage, this.element);
-          }
-        }
-
-        // Show static image and hide animated image
-        if (this.staticImage) {
-          this.staticImage.style.opacity = '1';
-          this.element.style.opacity = '0';
-        }
-      }
-
-      // Stop animation
-      this.element.style.animation = 'none';
-      this.isPlaying = false;
-      this.options.onPause?.();
-    } catch (error) {
-      console.error('Error pausing WebP animation:', error);
-    }
+    this.isPlaying = false;
+    this.updatePlayState();
+    this.options.onPause?.();
   }
 
-  async toggle() {
+  toggle() {
     if (this.isPlaying) {
-      await this.pause();
+      this.pause();
     } else {
-      await this.play();
+      this.play();
     }
   }
 
@@ -114,11 +67,6 @@ export class WebPController {
   }
 
   destroy() {
-    if (this.staticImage && this.staticImage.parentNode) {
-      this.staticImage.parentNode.removeChild(this.staticImage);
-    }
-    this.element.style.animation = '';
-    this.element.style.opacity = '1';
-    this.element.src = this.originalSrc;
+    this.element.classList.remove('webp-playing', 'webp-paused');
   }
 }
