@@ -13,8 +13,6 @@ export default function Home() {
           <h2 className="text-2xl font-semibold">Basic Controls</h2>
           <WebPPlayer
             src="/sample-webp.webp"
-            width={300}
-            height={200}
             showControls={true}
             loop={true}
             initialState="pause"
