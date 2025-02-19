@@ -63,7 +63,9 @@ export class WebPController {
       await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to ensure frame is rendered
 
       ctx.drawImage(this.element, 0, 0);
-      return canvas.toDataURL('image/png');
+      this.element.src = canvas.toDataURL();
+      this.currentFrameDataUrl = canvas.toDataURL();
+      return this.currentFrameDataUrl;
     } catch (error) {
       console.error('Error capturing frame:', error);
       return null;
@@ -96,7 +98,6 @@ export class WebPController {
       if (this.options.freezeOnPause) {
         const frameDataUrl = await this.captureFrame();
         if (frameDataUrl) {
-          this.currentFrameDataUrl = frameDataUrl;
           this.element.src = frameDataUrl;
         }
       } else {
