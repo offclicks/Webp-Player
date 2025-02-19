@@ -33,7 +33,7 @@ export class WebPController {
     if (this.options.initialState === 'play' || this.options.autoplay) {
       this.play();
     } else {
-      this.captureFrame();
+      this.pause();
     }
   }
 
@@ -49,12 +49,18 @@ export class WebPController {
 
   private async captureFrame(): Promise<string | null> {
     try {
+      await this.loadPromise;
+
       const canvas = document.createElement('canvas');
       canvas.width = this.element.naturalWidth || this.element.width;
       canvas.height = this.element.naturalHeight || this.element.height;
 
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Could not get canvas context');
+
+      // Ensure we have the original image loaded before capture
+      this.element.src = this.originalSrc;
+      await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to ensure frame is rendered
 
       ctx.drawImage(this.element, 0, 0);
       return canvas.toDataURL('image/png');
@@ -81,7 +87,7 @@ export class WebPController {
   }
 
   async pause() {
-    if (!this.isPlaying || this.isTransitioning) return;
+    if (!this.isPlaying && this.currentFrameDataUrl) return;
 
     try {
       this.isTransitioning = true;

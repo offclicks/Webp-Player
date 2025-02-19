@@ -19,7 +19,21 @@ export default function Home() {
       </h1>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Basic Player - Starts Playing */}
+        {/* Basic Player - Paused Initially */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">Basic Controls (Initially Paused)</h2>
+          <WebPPlayer
+            src="/sample-webp.webp"
+            width={300}
+            height={200}
+            showControls={true}
+            loop={true}
+            initialState="pause"
+            freezeOnPause={true}
+          />
+        </div>
+
+        {/* Auto-playing Player */}
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold">Auto-playing Controls</h2>
           <WebPPlayer
@@ -43,6 +57,20 @@ export default function Home() {
             playOnHover={true}
             showControls={false}
             freezeOnPause={true}
+            initialState="pause"
+          />
+        </div>
+
+        {/* No Frame Freeze Example */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">Controls without Frame Freeze</h2>
+          <WebPPlayer
+            src="/sample-webp.webp"
+            width={300}
+            height={200}
+            showControls={true}
+            freezeOnPause={false}
+            initialState="pause"
           />
         </div>
 
