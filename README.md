@@ -105,14 +105,6 @@ function CustomPlayer() {
 | onPause | () => void | - | Callback when animation is paused |
 | onEnd | () => void | - | Callback when animation ends |
 
-## Publishing
-
-To publish this as a package:
-
-1. Remove demo-specific code (pages/home.tsx)
-2. Update package.json with appropriate details
-3. Build the package using TypeScript
-4. Publish to npm
 
 ## License
 
