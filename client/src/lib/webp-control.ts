@@ -1,6 +1,7 @@
 export interface WebPControlOptions {
   autoplay?: boolean;
   loop?: boolean;
+  freezeOnPause?: boolean;
   initialState?: 'play' | 'pause';
   onPlay?: () => void;
   onPause?: () => void;
@@ -14,6 +15,7 @@ export class WebPController {
   private options: WebPControlOptions;
   private loadPromise: Promise<void>;
   private isTransitioning: boolean = false;
+  private currentFrameDataUrl: string | null = null;
 
   constructor(element: HTMLImageElement, options: WebPControlOptions = {}) {
     this.element = element;
@@ -21,6 +23,7 @@ export class WebPController {
     this.options = {
       autoplay: false,
       loop: true,
+      freezeOnPause: true,
       initialState: 'pause',
       ...options
     };
@@ -29,6 +32,8 @@ export class WebPController {
 
     if (this.options.initialState === 'play' || this.options.autoplay) {
       this.play();
+    } else {
+      this.pause();
     }
   }
 
@@ -40,6 +45,29 @@ export class WebPController {
         this.element.onload = () => resolve();
       }
     });
+  }
+
+  private async captureFrame(): Promise<string | null> {
+    try {
+      await this.loadPromise;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = this.element.naturalWidth || this.element.width;
+      canvas.height = this.element.naturalHeight || this.element.height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      // Ensure we have the original image loaded before capture
+      this.element.src = this.originalSrc;
+      await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to ensure frame is rendered
+
+      ctx.drawImage(this.element, 0, 0);
+      return canvas.toDataURL('image/png');
+    } catch (error) {
+      console.error('Error capturing frame:', error);
+      return null;
+    }
   }
 
   async play() {
@@ -59,16 +87,27 @@ export class WebPController {
   }
 
   async pause() {
-    if (!this.isPlaying) return;
+    if (!this.isPlaying && this.currentFrameDataUrl) return;
 
     try {
       this.isTransitioning = true;
       await this.loadPromise;
-      this.element.src = this.originalSrc;
+
+      if (this.options.freezeOnPause) {
+        const frameDataUrl = await this.captureFrame();
+        if (frameDataUrl) {
+          this.currentFrameDataUrl = frameDataUrl;
+          this.element.src = frameDataUrl;
+        }
+      } else {
+        this.element.src = this.originalSrc;
+      }
+
       this.isPlaying = false;
       this.options.onPause?.();
     } catch (error) {
       console.error('Error pausing WebP animation:', error);
+      this.element.src = this.originalSrc;
     } finally {
       this.isTransitioning = false;
     }
