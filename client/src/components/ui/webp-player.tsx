@@ -40,17 +40,27 @@ export function WebPPlayer({
 
   useEffect(() => {
     if (imgRef.current) {
-      controllerRef.current = new WebPController(imgRef.current, {
-        ...options,
-        onPlay: () => {
-          setIsPlaying(true);
-          options.onPlay?.();
-        },
-        onPause: () => {
-          setIsPlaying(false);
-          options.onPause?.();
-        }
-      });
+      // Wait for the image to load before initializing the controller
+      const img = imgRef.current;
+      const initController = () => {
+        controllerRef.current = new WebPController(img, {
+          ...options,
+          onPlay: () => {
+            setIsPlaying(true);
+            options.onPlay?.();
+          },
+          onPause: () => {
+            setIsPlaying(false);
+            options.onPause?.();
+          }
+        });
+      };
+
+      if (img.complete) {
+        initController();
+      } else {
+        img.onload = initController;
+      }
     }
 
     return () => {
