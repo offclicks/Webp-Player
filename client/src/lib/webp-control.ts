@@ -11,12 +11,9 @@ export interface WebPControlOptions {
 export class WebPController {
   private element: HTMLImageElement;
   private originalSrc: string;
-  private isPlaying: boolean = false;
+  private isPlaying: boolean;
   private options: WebPControlOptions;
-  private frameCanvas: HTMLCanvasElement;
-  private frameContext: CanvasRenderingContext2D | null;
-  private currentFrameDataUrl: string | null = null;
-  private isDestroyed: boolean = false;
+  private staticImage: HTMLImageElement | null = null;
 
   constructor(element: HTMLImageElement, options: WebPControlOptions = {}) {
     this.element = element;
@@ -29,94 +26,74 @@ export class WebPController {
       ...options
     };
 
-    // Initialize canvas for frame capture
-    this.frameCanvas = document.createElement('canvas');
-    this.frameContext = this.frameCanvas.getContext('2d');
+    // Set up initial styles
+    this.element.style.animation = 'none';
+    this.isPlaying = false;
 
-    // Set initial state
+    // Initialize based on options
     if (this.options.initialState === 'play' || this.options.autoplay) {
       this.play();
     } else {
-      this.initializePausedState();
+      this.pause();
     }
   }
 
-  private async initializePausedState() {
-    try {
-      await this.waitForImageLoad();
-      if (this.options.freezeOnPause) {
-        await this.captureAndSetFrame();
-      }
-      this.isPlaying = false;
-      this.options.onPause?.();
-    } catch (error) {
-      console.error('Error initializing paused state:', error);
-    }
-  }
-
-  private waitForImageLoad(): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.element.complete) {
-        resolve();
-      } else {
-        const handleLoad = () => {
-          this.element.removeEventListener('load', handleLoad);
-          resolve();
-        };
-        this.element.addEventListener('load', handleLoad);
-      }
-    });
-  }
-
-  private async captureAndSetFrame(): Promise<void> {
-    if (!this.frameContext || this.isDestroyed) return;
-
-    try {
-      // Ensure we're capturing from the original image
-      const tempImage = new Image();
-      tempImage.src = this.originalSrc;
-      await new Promise((resolve) => {
-        tempImage.onload = resolve;
-      });
-
-      // Set canvas dimensions to match the image
-      this.frameCanvas.width = tempImage.naturalWidth;
-      this.frameCanvas.height = tempImage.naturalHeight;
-
-      // Draw the current frame
-      this.frameContext.clearRect(0, 0, this.frameCanvas.width, this.frameCanvas.height);
-      this.frameContext.drawImage(tempImage, 0, 0);
-
-      // Store and set the frame
-      this.currentFrameDataUrl = this.frameCanvas.toDataURL();
-      this.element.src = this.currentFrameDataUrl;
-    } catch (error) {
-      console.error('Error capturing frame:', error);
-      this.element.src = this.originalSrc;
-    }
+  private createStaticImage(): HTMLImageElement {
+    const img = new Image();
+    img.src = this.originalSrc;
+    img.style.position = 'absolute';
+    img.style.top = '0';
+    img.style.left = '0';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.opacity = '0';
+    return img;
   }
 
   async play() {
-    if (this.isPlaying || this.isDestroyed) return;
+    if (this.isPlaying) return;
 
     try {
+      // Remove static image if it exists
+      if (this.staticImage && this.staticImage.parentNode) {
+        this.staticImage.parentNode.removeChild(this.staticImage);
+        this.staticImage = null;
+      }
+
+      // Start animation
+      this.element.style.animation = '';
+      this.element.style.opacity = '1';
       this.isPlaying = true;
-      this.element.src = this.originalSrc;
-      await this.waitForImageLoad();
       this.options.onPlay?.();
     } catch (error) {
       console.error('Error playing WebP animation:', error);
-      this.isPlaying = false;
     }
   }
 
   async pause() {
-    if (!this.isPlaying || this.isDestroyed) return;
+    if (!this.isPlaying && !this.options.freezeOnPause) return;
 
     try {
       if (this.options.freezeOnPause) {
-        await this.captureAndSetFrame();
+        // Create static image for freeze frame if it doesn't exist
+        if (!this.staticImage) {
+          this.staticImage = this.createStaticImage();
+          const container = this.element.parentNode as HTMLElement;
+          if (container) {
+            container.style.position = 'relative';
+            container.insertBefore(this.staticImage, this.element);
+          }
+        }
+
+        // Show static image and hide animated image
+        if (this.staticImage) {
+          this.staticImage.style.opacity = '1';
+          this.element.style.opacity = '0';
+        }
       }
+
+      // Stop animation
+      this.element.style.animation = 'none';
       this.isPlaying = false;
       this.options.onPause?.();
     } catch (error) {
@@ -137,9 +114,11 @@ export class WebPController {
   }
 
   destroy() {
-    this.isDestroyed = true;
-    this.pause();
+    if (this.staticImage && this.staticImage.parentNode) {
+      this.staticImage.parentNode.removeChild(this.staticImage);
+    }
+    this.element.style.animation = '';
+    this.element.style.opacity = '1';
     this.element.src = this.originalSrc;
-    this.frameContext = null;
   }
 }

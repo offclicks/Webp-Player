@@ -22,6 +22,7 @@ export function WebPPlayer({
   showControls = true,
   ...options
 }: WebPPlayerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const controllerRef = useRef<WebPController | null>(null);
   const [isPlaying, setIsPlaying] = useState(options.initialState === 'play');
@@ -64,15 +65,21 @@ export function WebPPlayer({
 
   return (
     <Card className="p-4 space-y-4">
-      <img
-        ref={imgRef}
-        src={src}
-        width={width}
-        height={height}
-        className={`max-w-full h-auto ${className}`}
+      <div 
+        ref={containerRef}
+        className="relative"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-      />
+      >
+        <img
+          ref={imgRef}
+          src={src}
+          width={width}
+          height={height}
+          className={`max-w-full h-auto ${className}`}
+          style={{ animation: isPlaying ? undefined : 'none' }}
+        />
+      </div>
       {showControls && (
         <div className="flex justify-center">
           <Button
