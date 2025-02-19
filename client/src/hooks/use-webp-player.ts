@@ -3,7 +3,7 @@ import { WebPController, type WebPControlOptions } from "@/lib/webp-control";
 
 export function useWebPPlayer(options?: WebPControlOptions) {
   const controllerRef = useRef<WebPController | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(options?.initialState === 'play');
 
   const initialize = (element: HTMLImageElement | null) => {
     if (!element) return;
@@ -13,6 +13,7 @@ export function useWebPPlayer(options?: WebPControlOptions) {
       controllerRef.current.destroy();
     }
 
+    // Create new controller with wrapped callbacks to update state
     controllerRef.current = new WebPController(element, {
       ...options,
       onPlay: () => {
@@ -35,24 +36,19 @@ export function useWebPPlayer(options?: WebPControlOptions) {
   return {
     initialize,
     isPlaying,
-    play: () => {
+    play: async () => {
       if (controllerRef.current && !isPlaying) {
-        controllerRef.current.play();
+        await controllerRef.current.play();
       }
     },
-    pause: () => {
+    pause: async () => {
       if (controllerRef.current && isPlaying) {
-        controllerRef.current.pause();
+        await controllerRef.current.pause();
       }
     },
-    toggle: () => {
+    toggle: async () => {
       if (controllerRef.current) {
-        controllerRef.current.toggle();
-      }
-    },
-    restart: () => {
-      if (controllerRef.current) {
-        controllerRef.current.restart();
+        await controllerRef.current.toggle();
       }
     }
   };
