@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebP Animation Demo</title>
+    <style>
+        .player-container {
+            max-width: 500px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .webp-image {
+            max-width: 100%;
+            height: auto;
+        }
+        .control-button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <img id="webpImage" src="sample-webp.webp" class="webp-image">
+        <br>
+        <button id="toggleButton" class="control-button">Play</button>
+    </div>
+
+    <script>
+        class WebPController {
+            constructor(element, options = {}) {
+                this.element = element;
+                this.originalSrc = element.src;
+                this.isPlaying = false;
+                this.options = {
+                    loop: true,
+                    freezeOnPause: true,
+                    ...options
+                };
+            }
+
+            play() {
+                if (!this.isPlaying) {
+                    this.isPlaying = true;
+                    this.element.src = this.originalSrc;
+                    if (this.options.onPlay) this.options.onPlay();
+                }
+            }
+
+            pause() {
+                if (this.isPlaying) {
+                    this.isPlaying = false;
+                    if (this.options.freezeOnPause) {
+                        this.captureFrame();
+                    }
+                    if (this.options.onPause) this.options.onPause();
+                }
+            }
+
+            captureFrame() {
+                const canvas = document.createElement('canvas');
+                canvas.width = this.element.naturalWidth || this.element.width;
+                canvas.height = this.element.naturalHeight || this.element.height;
+                
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(this.element, 0, 0);
+                    this.element.src = canvas.toDataURL('image/png');
+                }
+            }
+
+            toggle() {
+                if (this.isPlaying) {
+                    this.pause();
+                } else {
+                    this.play();
+                }
+            }
+        }
+
+        // Initialize the controller
+        const webpImage = document.getElementById('webpImage');
+        const toggleButton = document.getElementById('toggleButton');
+        
+        const controller = new WebPController(webpImage, {
+            onPlay: () => {
+                toggleButton.textContent = 'Pause';
+            },
+            onPause: () => {
+                toggleButton.textContent = 'Play';
+            }
+        });
+
+        // Add click handler
+        toggleButton.addEventListener('click', () => {
+            controller.toggle();
+        });
+
+        // Optional: Add hover functionality
+        webpImage.addEventListener('mouseenter', () => {
+            controller.play();
+        });
+
+        webpImage.addEventListener('mouseleave', () => {
+            controller.pause();
+        });
+    </script>
+</body>
+</html>
