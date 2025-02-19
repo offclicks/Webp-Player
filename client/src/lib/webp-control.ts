@@ -26,7 +26,10 @@ export class WebPController {
     };
 
     this.loadPromise = this.waitForLoad();
-    this.isPlaying = false;
+
+    if (this.options.initialState === 'play' || this.options.autoplay) {
+      this.play();
+    }
   }
 
   private waitForLoad(): Promise<void> {
@@ -61,23 +64,9 @@ export class WebPController {
     try {
       this.isTransitioning = true;
       await this.loadPromise;
-      
-      // Create a canvas to capture the current frame
-      const canvas = document.createElement('canvas');
-      canvas.width = this.element.naturalWidth || this.element.width;
-      canvas.height = this.element.naturalHeight || this.element.height;
-      
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(this.element, 0, 0);
-        // Only update if we successfully captured the frame
-        const dataUrl = canvas.toDataURL('image/png');
-        if (dataUrl !== 'data:,') {
-          this.element.src = dataUrl;
-          this.isPlaying = false;
-          this.options.onPause?.();
-        }
-      }
+      this.element.src = this.originalSrc;
+      this.isPlaying = false;
+      this.options.onPause?.();
     } catch (error) {
       console.error('Error pausing WebP animation:', error);
     } finally {

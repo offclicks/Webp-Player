@@ -29,8 +29,6 @@ export default function Home() {
               showControls={true}
               loop={true}
               initialState="pause"
-              freezeOnPause={true}
-              autoplay={false}
               className="rounded-lg shadow-md"
             />
           </Card>
@@ -42,12 +40,10 @@ export default function Home() {
               Animations that play on hover and pause when mouse leaves
             </p>
             <WebPPlayer
-              src="/sample-image2.webp"
+              src="/sample-webp.webp"
               playOnHover={true}
               showControls={false}
               initialState="pause"
-              freezeOnPause={true}
-              autoplay={false}
               className="rounded-lg shadow-md"
             />
           </Card>

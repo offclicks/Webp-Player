@@ -36,44 +36,22 @@ export function WebPPlayer({
 }: WebPPlayerProps) {
   const imgRef = useRef<HTMLImageElement>(null);
   const controllerRef = useRef<WebPController | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(options.initialState === 'play');
 
   useEffect(() => {
-    const init = async () => {
-      if (imgRef.current) {
-        // Ensure image is loaded
-        if (!imgRef.current.complete) {
-          await new Promise(resolve => {
-            imgRef.current!.onload = resolve;
-          });
+    if (imgRef.current) {
+      controllerRef.current = new WebPController(imgRef.current, {
+        ...options,
+        onPlay: () => {
+          setIsPlaying(true);
+          options.onPlay?.();
+        },
+        onPause: () => {
+          setIsPlaying(false);
+          options.onPause?.();
         }
-        
-        // Destroy previous controller if it exists
-        if (controllerRef.current) {
-          controllerRef.current.destroy();
-        }
-
-        // Create new controller
-        controllerRef.current = new WebPController(imgRef.current, {
-          ...options,
-          onPlay: () => {
-            setIsPlaying(true);
-            options.onPlay?.();
-          },
-          onPause: () => {
-            setIsPlaying(false);
-            options.onPause?.();
-          }
-        });
-
-        // Set initial state
-        if (options.initialState === 'pause') {
-          controllerRef.current.pause();
-        }
-      }
-    };
-
-    init();
+      });
+    }
 
     return () => {
       controllerRef.current?.destroy();
